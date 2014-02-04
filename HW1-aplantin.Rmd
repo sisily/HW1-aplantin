@@ -1,0 +1,36 @@
+B578 Homework 1 
+Anna Plantinga
+========================================================
+
+1. Use the GEOmetabd package to find all HCV gene expression data using the Illumina platform submitted by an investigator at Yale. This should be done with a single query, showing the title, the GSE accession number, the GPL accession number and the manufacturer and the description of the platform used.
+
+The PubMed ID for the paper matching the criteria above - HCV gene expression data, Illumina platform, and investigator at Yale - was located using a search for HCV gene expression data and an association with Yale on the Gene Expression Omnibus repository (http://www.ncbi.nlm.nih.gov/geo/). 
+
+Fields included are gse.gse (GSE accession number), gpl.gpl (GPL accession number), gse.title (title), gpl.manufacturer (chip manufacturer, here, Illumina), and gpl.description (platform description). The database is the combination of gse and gpl data tables, formed by first joining gse and gse_gpl - which contains the gse number that is associated with the gpl number - and then joining this with gpl.
+
+
+```{r question1}
+dbGetQuery(geo_con, "SELECT gse.gse, gse.title, gpl.gpl, gpl.manufacturer, gpl.description FROM (gse JOIN gse_gpl ON gse.gse=gse_gpl.gse) j JOIN gpl ON j.gpl=gpl.gpl WHERE gpl.manufacturer='Illumina Inc.' AND gse.pubmed_id='23067362';" )
+```
+
+
+2. Reproduce your above query using the data.table package. Again, try to use a single line of code. [Hint: You first need to convert all db tables to data.table tables].
+
+```{r question2}
+# Get all data from gse and gpl; store as data.table tables.
+gse <- as.data.table(dbGetQuery(geo_con, "SELECT * FROM gse;"))
+gse_gpl <- as.data.table(dbGetQuery(geo_con, "SELECT * FROM gse_gpl;"))
+gpl <- as.data.table(dbGetQuery(geo_con, "SELECT * FROM gpl;"))
+
+# Set keys and join gse and gpl tables using gse_gpl to link gse and gpl IDs. 
+setkey(gse, "gse")
+setkey(gse_gpl, "gse")
+join1 <- gse[gse_gpl, nomatch=0]
+
+setkey(join1, "gpl")
+setkey(gpl, "gpl")
+join2 <- join1[gpl, nomatch=0]
+
+# Filter joined table by PubMed id and platform manufacturer, then choose selected columns, as specified above. Print the result. 
+result <- join2[pubmed_id=="23067362"][manufacturer=="Illumina Inc.", list(gse,title,gpl,manufacturer,description)]; result
+``` 
