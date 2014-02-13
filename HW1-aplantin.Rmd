@@ -8,6 +8,10 @@ The PubMed ID for the paper matching the criteria above - HCV gene expression da
 
 Fields included are gse.gse (GSE accession number), gpl.gpl (GPL accession number), gse.title (title), gpl.manufacturer (chip manufacturer, here, Illumina), and gpl.description (platform description). The database is the combination of gse and gpl data tables, formed by first joining gse and gse_gpl - which contains the gse number that is associated with the gpl number - and then joining this with gpl.
 
+```{r}
+library(GEOmetadb)
+geo_con <- dbConnect(SQLite(), "GEOmetadb.sqlite")
+```
 
 ```{r question1}
 dbGetQuery(geo_con, "SELECT gse.gse, gse.title, gpl.gpl, gpl.manufacturer, gpl.description FROM (gse JOIN gse_gpl ON gse.gse=gse_gpl.gse) j JOIN gpl ON j.gpl=gpl.gpl WHERE gpl.manufacturer='Illumina Inc.' AND gse.pubmed_id='23067362';" )
@@ -18,9 +22,10 @@ dbGetQuery(geo_con, "SELECT gse.gse, gse.title, gpl.gpl, gpl.manufacturer, gpl.d
 
 ```{r question2}
 # Get all data from gse and gpl; store as data.table tables.
-gse <- as.data.table(dbGetQuery(geo_con, "SELECT * FROM gse;"))
-gse_gpl <- as.data.table(dbGetQuery(geo_con, "SELECT * FROM gse_gpl;"))
-gpl <- as.data.table(dbGetQuery(geo_con, "SELECT * FROM gpl;"))
+library(data.table)
+gse <-as.data.table(dbGetQuery(geo_con, "SELECT * FROM gse;"))
+gse_gpl<-as.data.table(dbGetQuery(geo_con, "SELECT * FROM gse_gpl;"))
+gpl<-data.table(dbGetQuery(geo_con, "SELECT * FROM gpl;"))
 
 # Set keys and join gse and gpl tables using gse_gpl to link gse and gpl IDs. 
 setkey(gse, "gse")
